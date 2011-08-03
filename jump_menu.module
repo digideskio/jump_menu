@@ -9,7 +9,7 @@ function jump_menu($menu, $parent, $maxDepth = 0, $choose = 'Select a destinatio
     
     ctools_include('jump-menu');
     // Load up the menu.
-    $menu = menu_tree_page_data($menu);
+    $menu = menu_tree_all_data($menu);
     // Trim to the needed portion, start at parent menuID.
     foreach($menu as $m) {
         if ($m['link']['mlid'] == $parent) { // mlid is i18n tranlsation friendly.
@@ -17,6 +17,7 @@ function jump_menu($menu, $parent, $maxDepth = 0, $choose = 'Select a destinatio
             break;
         }
     }
+    
     // Initialize
     $depths = array('current' => 0, 'max' => $maxDepth);
     $targets = array();
@@ -47,21 +48,25 @@ function jump_menu($menu, $parent, $maxDepth = 0, $choose = 'Select a destinatio
 function _jump_menu_create_options(&$t, &$m, &$d) {
     foreach ($m as $item) { // set the option
         
-        // Add depth indicators to titles.
-        if($d['current'] > 0) {
-            $title = ' '. str_repeat('-', $d['current']) .' '. $item['link']['title'];
-        } else {
-            $title = $item['link']['title'];
-        }
-        
-        // Add to targets
-        // Allow for special menu item dummy items for grouping
-        if (module_exists('special_menu_items') && $item['link']['page_callback'] == 'special_menu_items_dummy') {
-            // Create a dummy option using optgroups.
-            $t[ t($title) ] = array();
-        } else {
-            // Create a normal option.
-            $t[ url($item['link']['href']) ] = t($title);
+        if($item['link']['hidden'] == 0) { // Kill non-viewable menu items.
+
+            // Add depth indicators to titles.
+            if($d['current'] > 0) {
+                $title = ' '. str_repeat('-', $d['current']) .' '. $item['link']['title'];
+            } else {
+                $title = $item['link']['title'];
+            }
+            
+            // Add targets
+            // Allow for special menu item dummy items for grouping
+            if (module_exists('special_menu_items') && $item['link']['page_callback'] == 'special_menu_items_dummy') {
+                // Create a dummy option using optgroups.
+                $t[ t($title) ] = array();
+            } else {
+                // Create a normal option.
+                $t[ url($item['link']['href']) ] = t($title);
+            }
+
         }
         
          // Loop deeper if there is no max or we haven't reached it.
