@@ -5,7 +5,7 @@
   See: modules/ctools/includes/jump-menu.inc
   // NOTE: Menu items must be checked as "expanded" for traversing to work.
 */
-function jump_menu($menu, $parent, $maxDepth = 0, $choose = 'Select a destination') {
+function jump_menu($menu, $parent, $btn = false, $maxDepth = 0, $choose = 'Select a destination') {
     
     ctools_include('jump-menu');
     // Load up the menu.
@@ -18,27 +18,35 @@ function jump_menu($menu, $parent, $maxDepth = 0, $choose = 'Select a destinatio
         }
     }
     
-    // Initialize
-    $depths = array('current' => 0, 'max' => $maxDepth);
+    // Initialize for building.
+    $depths = array('current' => 1, 'max' => $maxDepth);
     $targets = array();
     // Build the jump options from the menu 
     _jump_menu_create_options($targets, $menu, $depths);
 
-    // Output
+    // Output...
     if (count($targets) == 0) {
         return 'Jump menu contains no items!';
     } else {
-        //return jump_quickly($targets, 'custom', TRUE); // Uses the Jump module.
-        $options = array(
-            'choose' => t($choose),
-            //'title' => The text to display for the #title attribute.
-            //'description': The text to display for the #description attribute.
-            //'default_value': The text to display for the #default_value attribute.
-            'hide' => true, // If TRUE the go button will be set to hide via javascript and will submit on change.
-            //'button': The text to display on the button.
-            //'image': If set, an image button will be used instead, and the image set to this.
-            //'inline': If set to TRUE (default) the display will be forced inline.   
-        );
+        
+        $options = array();
+        // Handle button option.
+        if($btn) {
+            $options['hide'] = false;
+            $options['button'] = $btn;
+        } else {
+            $options['hide'] = true;
+        }
+        // Place initial select option value.
+        $options['choose'] = t($choose);
+        
+        // Other available options...
+        //'title' => The text to display for the #title attribute.
+        //'description': The text to display for the #description attribute.
+        //'default_value': The text to display for the #default_value attribute.
+        //'image': If set, an image button will be used instead, and the image set to this.
+        //'inline': If set to TRUE (default) the display will be forced inline.
+        
         return drupal_get_form('ctools_jump_menu', $targets, $options);
     }
 
@@ -51,7 +59,7 @@ function _jump_menu_create_options(&$t, &$m, &$d) {
         if($item['link']['hidden'] == 0) { // Kill non-viewable menu items.
 
             // Add depth indicators to titles.
-            if($d['current'] > 0) {
+            if($d['current'] > 1) {
                 $title = ' '. str_repeat('-', $d['current']) .' '. $item['link']['title'];
             } else {
                 $title = $item['link']['title'];
