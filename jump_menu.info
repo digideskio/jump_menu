@@ -4,6 +4,3 @@ dependencies[] = ctools
 dependencies[] = block
 dependencies[] = menu
 package = Chaos tool suite
-version = "6.x-1.1"
-core = 6.x
-project = "ctools"
