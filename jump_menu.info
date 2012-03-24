@@ -4,3 +4,6 @@ dependencies[] = ctools
 dependencies[] = block
 dependencies[] = menu
 package = Chaos tool suite
+
+; Purposively added for feature development.
+core = 7.x
