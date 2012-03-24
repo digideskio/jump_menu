@@ -138,17 +138,24 @@ function jump_menu_select($variables) {
   $element = $variables['element'];
   element_set_attributes($element, array('id', 'name', 'size'));
   _form_set_class($element, array('form-select'));
-  // Provide alternate rendering path for jump menus.
-  // TODO: This is a weak thing to test.
 
+  /*
+  // The careful way, only altering jump menu selects.
+  // Provide alternate rendering path for jump menus.
   $output = '<select' . drupal_attributes($element['#attributes']) . '>';
   if ($variables['element']['#attributes']['class'][0] == 'ctools-jump-menu-select') {
+    // TODO: This is a weak thing to test.
     $output .= jump_menu_form_select_options($element);
   }
   else {
     $output .= form_select_options($element);
   }
   $output .= '</select>';
+  */
+  
+  $output = '<select' . drupal_attributes($element['#attributes']) . '>' .
+    jump_menu_form_select_options($element) . '</select>';
+  
   return $output;
 }
 
@@ -167,29 +174,37 @@ function jump_menu_form_select_options($element, $choices = NULL) {
   $value_is_array = $value_valid && is_array($element['#value']);
   $options = '';
   
-  dsm($element);
-  
   foreach ($choices as $key => $choice) {
-    // Optgroup for special menu item.
-    if (!isset($choice['value'])) {
-      $options .= '<optgroup label="' . $choice['title'] . '"></optgroup>';
-    }
-    // Normal item or first selector.
-    // TODO: This set of if tests is messy.
-    if (is_string($choice) || isset($choice['value'])) {
-      
-      // Grab the value depending on type.
-      if (is_string($choice)) {
-        $optValue = $choice;
-        $choice = array(
-          'title' => $choice,
-        );
-      }
-      else {
+    
+    // Allow overloading options with an array.
+    if (is_array($choice)) {
+      if (isset($choice['value'])) {
+        // Overloaded option array.
         $optValue = (string) $choice['value'];
       }
-      
-      // Create the HTML output.
+      else {
+        if (isset($choice['title'])) {
+          // Optgroup for special menu items.
+          $options .= '<optgroup label="' . $choice['title'] . '"></optgroup>';
+        }
+        else {
+          // Normal optgroups
+          $options .= '<optgroup label="' . $key . '">';
+          $options .= form_select_options($element, $choice);
+          $options .= '</optgroup>';
+        }
+      }
+    }
+    else {
+      // Simple options.
+      $optValue = $key;
+      $choice = array(
+        'title' => $choice,
+      );
+    }
+    
+    // Create the HTML output.
+    if (isset($optValue)) {
       // Note this make the first item no longer selected, but that doesn't matter.
       if ($value_valid && (!$value_is_array && (string) $element['#value'] === $optValue || ($value_is_array && in_array($optValue, $element['#value'])))) {
         $selected = ' selected="selected"';
@@ -198,10 +213,10 @@ function jump_menu_form_select_options($element, $choices = NULL) {
         $selected = '';
       }
       $options .= '<option value="' . check_plain($optValue) . '"' . $selected . '>' . check_plain($choice['title']) . '</option>';
-
-      // TODO: add #attributes.
-
     }
+    unset($optValue);
+    // TODO: add #attributes.
+
   }
   return $options;
 }
