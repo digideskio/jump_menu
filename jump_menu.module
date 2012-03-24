@@ -219,9 +219,6 @@ function jump_menu_form_select_options($element, $choices = NULL) {
       $options .= '<option value="' . check_plain($optValue) . '"' . $selected . drupal_attributes($choice['#attributes']) . '>' . check_plain($choice['title']) . '</option>';
     }
     unset($optValue);
-    
-    // Add #attributes.
-    
   }
   return $options;
 }
