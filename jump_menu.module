@@ -64,9 +64,10 @@ function _jump_menu_create_options(&$t, &$m, &$d) {
   foreach ($m as $item) { // Set the option.
     
     if($item['link']['hidden'] == 0) { // Kill non-viewable menu items.
+      
       // Add depth indicators to titles.
       if($d['current'] > 1) {
-        $title = ' '. str_repeat('-', $d['current']) .' '. $item['link']['title'];
+        $title = ' '. str_repeat('-', $d['current']-1) .' '. $item['link']['title'];
       } else {
         $title = $item['link']['title'];
       }
@@ -205,6 +206,9 @@ function jump_menu_form_select_options($element, $choices = NULL) {
     
     // Create the HTML output.
     if (isset($optValue)) {
+      if (!isset($choice['#attributes'])) {
+        $choice['#attributes'] = array();
+      }
       // Note this make the first item no longer selected, but that doesn't matter.
       if ($value_valid && (!$value_is_array && (string) $element['#value'] === $optValue || ($value_is_array && in_array($optValue, $element['#value'])))) {
         $selected = ' selected="selected"';
@@ -212,11 +216,12 @@ function jump_menu_form_select_options($element, $choices = NULL) {
       else {
         $selected = '';
       }
-      $options .= '<option value="' . check_plain($optValue) . '"' . $selected . '>' . check_plain($choice['title']) . '</option>';
+      $options .= '<option value="' . check_plain($optValue) . '"' . $selected . drupal_attributes($choice['#attributes']) . '>' . check_plain($choice['title']) . '</option>';
     }
     unset($optValue);
-    // TODO: add #attributes.
-
+    
+    // Add #attributes.
+    
   }
   return $options;
 }
