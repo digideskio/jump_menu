@@ -1,5 +1,5 @@
-name = Adv Jump Menu (via CTools) API
-description = Enables creating custom jump menus programmatically via CTools module.
+name = Better Jump Menus
+description = Enables creating custom jump menus programmatically via the CTools API.
 dependencies[] = ctools
 dependencies[] = block
 dependencies[] = menu
