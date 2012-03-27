@@ -105,14 +105,19 @@ function _jump_menu_create_options(&$t, &$m, &$d) {
  * Register jump blocks for all menus.
  */
 function jump_menu_block_info() {
+  
+  // Add all menus as blocks.
   $menus = menu_get_menus(TRUE);
   $blocks = array();
   foreach ($menus as $name => $title) {
-    $blocks['jump_menu_' . $name]['info'] = 'Jump Menu: ' . check_plain($title);
+    $blocks['jump-menu_menu_' . $name]['info'] = t('Jump Menu') . ' ' . t('menu') . ' - ' . check_plain($title);
     // Menu blocks can't be cached because each menu item can have
     // a custom access callback. menu.inc manages its own caching.
-    $blocks['jump_menu_' . $name]['cache'] = DRUPAL_NO_CACHE;
+    $blocks['jump-menu_menu_' . $name]['cache'] = DRUPAL_NO_CACHE;
   }
+  $blocks['jump-menu_local_' . $name]['info'] = t('Jump Menu') . ': ' . t('Local tasks');
+  $blocks['jump-menu_local_' . $name]['cache'] = DRUPAL_NO_CACHE;
+
   return $blocks;
 }
 
@@ -120,20 +125,70 @@ function jump_menu_block_info() {
  * Display jump menu block.
  */
 function jump_menu_block_view($delta = '') {
-  $menus = menu_get_menus(TRUE);
-  $menuName = str_replace('jump_menu_', '', $delta); // Strip off jump_menu.
-  $data['subject'] = check_plain($menus[$menuName]);
-  $data['content'] = jump_menu($menuName, 0, FALSE, 0, '-- Select destination --');
+  
+  // Strip off jump_menu. 
+  $blockName = str_replace('jump-menu_', '', $delta);
+  // Cache menu list.
+  static $menus;
+  if (!isset($menus)) {
+    $menus = menu_get_menus(TRUE);
+  }
+  
+  // If a menu block.
+  if (substr($blockName, 0, 5) == 'menu_') {
+    
+    $data['subject'] = check_plain($menus[substr($blockName, 5)]);
+    $data['content'] = jump_menu(substr($blockName, 5), 0, FALSE, 0, t('-- Select destination --'));
+  }
+  // If a local tasks block.
+  elseif (substr($blockName, 0, 6) == 'local_') {
+
+    // Collect the local tasks.
+    $links = menu_local_tasks($level = 0);
+    if ($links['tabs']['count'] > 0) {
+      $targets = array();
+      // Create select list targets
+      foreach ($links['tabs']['output'] as $l) {
+        if ($l['#link']['access'] == TRUE) {
+          $targets[] = array(
+            'value' => url($l['#link']['href']),
+            'title' => t($l['#link']['title']),
+          );
+        }
+      }
+      // Set options.
+      $options = array();
+      $options['hide'] = TRUE;
+      $options['choose'] = t('-- Choose --');      
+      // Populate block.
+      $data['subject'] = t('Local Tasks');
+      $data['content'] = drupal_render( drupal_get_form('ctools_jump_menu', $targets, $options) );
+    }
+    else {
+      $data = '';
+    }
+    
+  }
+  // Not suppose to happen.
+  else {
+    drupal_set_message(t('Something is wrong with the Jump Menu module, please report.'));
+    $data = '';
+  }
+  
   return $data;
 }
 
+/**
+ * Alter theme registrat to allow overriding select theme function,
+ * to allow for extra attributes within options through form API.
+ * This is to add depth classes.
+ */
 function jump_menu_theme_registry_alter(&$theme_registry) {
   $theme_registry['select']['function'] = 'jump_menu_select';
 }
 
 /**
- * Override select theme function to allow for extra attributes.
- * Points select theming to following function.
+ * Override select theme function (points select theming to following function).
  */
 function jump_menu_select($variables) {
   $element = $variables['element'];
