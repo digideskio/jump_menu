@@ -136,9 +136,8 @@ function jump_menu_block_view($delta = '') {
   
   // If a menu block.
   if (substr($blockName, 0, 5) == 'menu_') {
-    
     $data['subject'] = check_plain($menus[substr($blockName, 5)]);
-    $data['content'] = jump_menu(substr($blockName, 5), 0, FALSE, 0, t('-- Select destination --'));
+    $data['content'] = jump_menu(substr($blockName, 5), 0, FALSE, 0, check_plain($menus[substr($blockName, 5)]));
   }
   // If a local tasks block.
   elseif (substr($blockName, 0, 6) == 'local_') {
