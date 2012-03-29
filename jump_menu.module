@@ -125,6 +125,28 @@ function jump_menu_block_info() {
  * Display jump menu block.
  */
 function jump_menu_block_view($delta = '') {
+  // Default rendering.
+  return _jump_menu_render_block($delta);
+}
+
+/**
+ * Make use of block settings on display.
+ */
+function jump_menu_block_view_alter(&$data, $block) {
+  if ($block->module == 'jump_menu' && $block->title) {
+    // Pass in the block settings.
+    $options['choose'] = $block->title;
+    // Replace content with user set title as choice text.
+    // Would be nice to avoid rendering the menu twice in the stack.
+    $dataBuild = _jump_menu_render_block($block->delta, $options);
+    $data['content'] = $dataBuild['content'];
+  }
+}
+
+/**
+ * Abstract block rendering to be more flexible about when/how this happens.
+ */
+function _jump_menu_render_block($delta, $options = array()) {
   
   // Strip off jump_menu. 
   $blockName = str_replace('jump-menu_', '', $delta);
@@ -137,7 +159,10 @@ function jump_menu_block_view($delta = '') {
   // If a menu block.
   if (substr($blockName, 0, 5) == 'menu_') {
     $data['subject'] = check_plain($menus[substr($blockName, 5)]);
-    $data['content'] = jump_menu(substr($blockName, 5), 0, FALSE, 0, check_plain($menus[substr($blockName, 5)]));
+    
+    // Set default 'choose' text to menu name.
+    $options['choose'] = (isset($options['choose'])) ? $options['choose'] : check_plain($menus[substr($blockName, 5)]);
+    $data['content'] = jump_menu(substr($blockName, 5), 0, FALSE, 0, $options['choose']);
   }
   // If a local tasks block.
   elseif (substr($blockName, 0, 6) == 'local_') {
@@ -155,10 +180,9 @@ function jump_menu_block_view($delta = '') {
           );
         }
       }
-      // Set options.
-      $options = array();
-      $options['hide'] = TRUE;
-      $options['choose'] = t('-- Choose --');      
+      // Take options and place defaults.
+      $options['hide'] = (isset($options['hide'])) ? $options['hide'] : TRUE;
+      $options['choose'] = (isset($options['choose'])) ? $options['choose'] : t('-- Choose --');      
       // Populate block.
       $data['subject'] = t('Local Tasks');
       $data['content'] = drupal_render( drupal_get_form('ctools_jump_menu', $targets, $options) );
@@ -175,6 +199,7 @@ function jump_menu_block_view($delta = '') {
   }
   
   return $data;
+  
 }
 
 /**
