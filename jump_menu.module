@@ -140,7 +140,7 @@ function jump_menu_block_view_alter(&$data, $block) {
     // Replace content with user set title as choice text.
     // Would be nice to avoid rendering the menu twice in the stack.
     $dataBuild = _jump_menu_render_block($block->delta, $options);
-    $data['content'] = $dataBuild['content'];
+    if ($data) $data['content'] = $dataBuild['content'];    
   }
 }
 
