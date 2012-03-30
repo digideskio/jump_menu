@@ -126,6 +126,7 @@ function jump_menu_block_info() {
  */
 function jump_menu_block_view($delta = '') {
   // Default rendering.
+  // The block_view_alter function re-renders if block settings are in place.
   return _jump_menu_render_block($delta);
 }
 
@@ -168,7 +169,11 @@ function _jump_menu_render_block($delta, $options = array()) {
   elseif (substr($blockName, 0, 6) == 'local_') {
 
     // Collect the local tasks.
-    $links = menu_local_tasks($level = 0);
+    $links = menu_local_tasks(0);
+    $linksSecondary = menu_local_tasks(1);
+    // Are there any real secondary tasks?
+    $secondary = (count($linksSecondary['tabs']['output']) != 0) ? TRUE : FALSE;
+    
     if ($links['tabs']['count'] > 0) {
       $targets = array();
       // Create select list targets
@@ -178,6 +183,15 @@ function _jump_menu_render_block($delta, $options = array()) {
             'value' => url($l['#link']['href']),
             'title' => t($l['#link']['title']),
           );
+          // Do secondary tabs fit with this item?
+          if ($secondary && $linksSecondary['tabs']['output'][0]['#link']['tab_parent_href'] == $l['#link']['href']) {
+            foreach ($linksSecondary['tabs']['output'] as $sl) {
+              $targets[] = array(
+                'value' => url($sl['#link']['href']),
+                'title' => '- ' . t($sl['#link']['title']),
+              );
+            }
+          }
         }
       }
       // Take options and place defaults.
