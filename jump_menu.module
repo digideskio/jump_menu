@@ -110,13 +110,16 @@ function jump_menu_block_info() {
   $menus = menu_get_menus(TRUE);
   $blocks = array();
   foreach ($menus as $name => $title) {
-    $blocks['jump-menu_menu_' . $name]['info'] = t('Jump Menu') . ' ' . t('menu') . ' - ' . check_plain($title);
+    $blocks['jump_menu-m_' . $name]['info'] = t('Jump Menu') . ' ' . t('menu') . ' - ' . check_plain($title);
     // Menu blocks can't be cached because each menu item can have
     // a custom access callback. menu.inc manages its own caching.
-    $blocks['jump-menu_menu_' . $name]['cache'] = DRUPAL_NO_CACHE;
+    $blocks['jump_menu-m_' . $name]['cache'] = DRUPAL_CACHE_PER_ROLE;
   }
-  $blocks['jump-menu_local_' . $name]['info'] = t('Jump Menu') . ': ' . t('Local tasks');
-  $blocks['jump-menu_local_' . $name]['cache'] = DRUPAL_NO_CACHE;
+  
+  // Add local menu tasks block.
+  $blocks['jump_menu-local-tasks']['info'] = t('Jump Menu') . ': ' . t('Local tasks');
+  // Would need to be PER ROLE and PER PAGE.
+  $blocks['jump_menu-local-tasks']['cache'] = DRUPAL_NO_CACHE;
 
   return $blocks;
 }
@@ -137,10 +140,19 @@ function jump_menu_block_view_alter(&$data, $block) {
   if ($block->module == 'jump_menu' && $block->title) {
     // Pass in the block settings.
     $options['choose'] = $block->title;
+    
+    $data['subject'] = '';
     // Replace content with user set title as choice text.
     // Would be nice to avoid rendering the menu twice in the stack.
-    $dataBuild = _jump_menu_render_block($block->delta, $options);
-    if ($data) $data['content'] = $dataBuild['content'];    
+    $dataBuilt = _jump_menu_render_block($block->delta, $options);
+    if (isset($data) && ($dataBuilt) ) $data['content'] = $dataBuilt['content'];
+  }
+}
+
+function jump_menu_preprocess_block(&$vars, $hook) {
+  // Kill off the title if set. It's being used as the choose value.
+  if ($vars['block']->module == 'jump_menu' && $vars['block']->title) {
+    $vars['block']->subject = '';
   }
 }
 
@@ -150,23 +162,26 @@ function jump_menu_block_view_alter(&$data, $block) {
 function _jump_menu_render_block($delta, $options = array()) {
   
   // Strip off jump_menu. 
-  $blockName = str_replace('jump-menu_', '', $delta);
+  $blockName = str_replace('jump_menu-', '', $delta);
   // Cache menu list.
   static $menus;
   if (!isset($menus)) {
     $menus = menu_get_menus(TRUE);
   }
   
+  // Options are always available.
+  $options['hide'] = (isset($options['hide'])) ? $options['hide'] : TRUE;
+  
   // If a menu block.
-  if (substr($blockName, 0, 5) == 'menu_') {
-    $data['subject'] = check_plain($menus[substr($blockName, 5)]);
+  if (substr($blockName, 0, 2) == 'm_') {
+    $data['subject'] = check_plain($menus[substr($blockName, 2)]);
     
     // Set default 'choose' text to menu name.
-    $options['choose'] = (isset($options['choose'])) ? $options['choose'] : check_plain($menus[substr($blockName, 5)]);
-    $data['content'] = jump_menu(substr($blockName, 5), 0, FALSE, 0, $options['choose']);
+    $options['choose'] = (isset($options['choose'])) ? $options['choose'] : check_plain($menus[substr($blockName, 2)]);
+    $data['content'] = jump_menu(substr($blockName, 2), 0, FALSE, 0, $options['choose']);
   }
   // If a local tasks block.
-  elseif (substr($blockName, 0, 6) == 'local_') {
+  elseif (substr($blockName, 0, 11) == 'local-tasks') {
 
     // Collect the local tasks.
     $links = menu_local_tasks(0);
@@ -195,21 +210,20 @@ function _jump_menu_render_block($delta, $options = array()) {
         }
       }
       // Take options and place defaults.
-      $options['hide'] = (isset($options['hide'])) ? $options['hide'] : TRUE;
       $options['choose'] = (isset($options['choose'])) ? $options['choose'] : t('-- Choose --');      
       // Populate block.
       $data['subject'] = t('Local Tasks');
       $data['content'] = drupal_render( drupal_get_form('ctools_jump_menu', $targets, $options) );
     }
     else {
-      $data = '';
+      $data = FALSE;
     }
     
   }
   // Not suppose to happen.
   else {
     drupal_set_message(t('Something is wrong with the Jump Menu module, please report.'));
-    $data = '';
+    $data = FALSE;
   }
   
   return $data;
