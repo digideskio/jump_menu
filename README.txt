@@ -34,17 +34,19 @@ function MYMODULE_block($op = 'list', $delta = 0) {
         $blocks = array();
         $blocks['mymodule_' . $menu_name]['info'] = t('My Jump Menu');
         $blocks['mymodule_' . $menu_name]['cache'] = BLOCK_NO_CACHE;
-      return $blocks;
-      break;
-    case 'view' :
-      $data['subject'] = t('My Jump Menu Title');
-      $data['content'] = jump_menu($menu_name, 0, FALSE, 0, '-- Select destination --');
-      return $data;
-      break;
+        return $blocks;
+        break;
+
+      case 'view':
+        $data['subject'] = t('My Jump Menu Title');
+        $data['content'] = jump_menu($menu_name, 0, FALSE, 0, '-- Select destination --');
+        return $data;
+        break;
+ 
     }
   }
 }
-
+?>
 
 Recommendations...
 Admin drop downs are pretty useful, either based on the Navigation menu or

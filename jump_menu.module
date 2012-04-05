@@ -56,7 +56,7 @@ function jump_menu($menu, $parent, $btn = FALSE, $max_depth = 0, $choose = 'Sele
     // 'default_value': The text to display for the #default_value attribute.
     // 'image': If set, an image button will be used instead, and the image set to this.
     // 'inline': If set to TRUE (default) the display will be forced inline.
-    return drupal_render( drupal_get_form('ctools_jump_menu', $targets, $options) );
+    return drupal_render(drupal_get_form('ctools_jump_menu', $targets, $options));
   }
 
 }
@@ -72,7 +72,7 @@ function _jump_menu_create_options(&$t, &$m, &$d) {
 
       // Add depth indicators to titles.
       if ($d['current'] > 1) {
-        $title = ' '. str_repeat('-', $d['current']-1) . ' ' . $item['link']['title'];
+        $title = ' ' . str_repeat('-', $d['current']-1) . ' ' . $item['link']['title'];
       }
       else {
         $title = $item['link']['title'];
@@ -81,7 +81,6 @@ function _jump_menu_create_options(&$t, &$m, &$d) {
       // Allow for special menu item dummy items for grouping.
       if (module_exists('special_menu_items') && $item['link']['page_callback'] == 'drupal_not_found') {
         // Create a dummy option using optgroups.
-        // $t[ t($title) ] = array(); // Prior to special render path
         $t[] = array(
           'title' => t($title),
           '#attributes' => array('class' => 'd-' . $d['current']),
@@ -100,7 +99,8 @@ function _jump_menu_create_options(&$t, &$m, &$d) {
     }
     // Loop deeper if there is no max or we haven't reached it.
     if ($item['below'] && ($d['max'] == 0 || $d['current'] < $d['max'])) {
-      $d['current']++; // Drop current depth.
+      // Drop current depth.
+      $d['current']++;
       _jump_menu_create_options($t, $item['below'], $d);
     }
   }
@@ -173,7 +173,7 @@ function jump_menu_preprocess_block(&$vars, $hook) {
  */
 function _jump_menu_render_block($delta, $options = array()) {
 
-  // Strip off jump_menu. 
+  // Strip off jump_menu.
   $block_name = str_replace('jump_menu-', '', $delta);
   // Cache menu list.
   static $menus;
@@ -187,7 +187,7 @@ function _jump_menu_render_block($delta, $options = array()) {
   // If a menu block.
   if (substr($block_name, 0, 2) == 'm_') {
     $data['subject'] = check_plain($menus[substr($block_name, 2)]);
-    
+
     // Set default 'choose' text to menu name.
     $options['choose'] = (isset($options['choose'])) ? $options['choose'] : check_plain($menus[substr($block_name, 2)]);
     $data['content'] = jump_menu(substr($block_name, 2), 0, FALSE, 0, $options['choose']);
@@ -203,7 +203,7 @@ function _jump_menu_render_block($delta, $options = array()) {
 
     if ($links['tabs']['count'] > 0) {
       $targets = array();
-      // Create select list targets
+      // Create select list targets.
       foreach ($links['tabs']['output'] as $l) {
         if ($l['#link']['access'] == TRUE) {
           $targets[] = array(
@@ -225,7 +225,7 @@ function _jump_menu_render_block($delta, $options = array()) {
       $options['choose'] = (isset($options['choose'])) ? $options['choose'] : t(JUMP_MENU_DEFAULT_CHOOSE);      
       // Populate block.
       $data['subject'] = t('Local Tasks');
-      $data['content'] = drupal_render( drupal_get_form('ctools_jump_menu', $targets, $options) );
+      $data['content'] = drupal_render(drupal_get_form('ctools_jump_menu', $targets, $options));
     }
     else {
       $data = FALSE;
