@@ -13,7 +13,6 @@ define('JUMP_MENU_DEFAULT_CHOOSE', '-- Choose --');
  * Output a core menu as a select jump menu.
  */
 function jump_menu($menu, $parent, $btn = FALSE, $max_depth = 0, $choose = 'Select a destination') {
-
   ctools_include('jump-menu');
   // Load up the menu.
   $menu = menu_tree_all_data($menu);
@@ -25,19 +24,16 @@ function jump_menu($menu, $parent, $btn = FALSE, $max_depth = 0, $choose = 'Sele
       break;
     }
   }
-
   // Initialize for building.
   $depths = array('current' => 1, 'max' => $max_depth);
   $targets = array();
   // Build the jump options from the menu.
   _jump_menu_create_options($targets, $menu, $depths);
-
   // Output...
   if (count($targets) == 0) {
     return 'Jump menu contains no items!';
   }
   else {
-
     $options = array();
     // Handle button option.
     if ($btn) {
@@ -49,7 +45,6 @@ function jump_menu($menu, $parent, $btn = FALSE, $max_depth = 0, $choose = 'Sele
     }
     // Place initial select option value.
     $options['choose'] = t($choose);
-
     // Other available options...
     // 'title' => The text to display for the #title attribute.
     // 'description': The text to display for the #description attribute.
@@ -58,7 +53,6 @@ function jump_menu($menu, $parent, $btn = FALSE, $max_depth = 0, $choose = 'Sele
     // 'inline': If set to TRUE (default) the display will be forced inline.
     return drupal_render(drupal_get_form('ctools_jump_menu', $targets, $options));
   }
-
 }
 
 /**
@@ -116,7 +110,7 @@ function jump_menu_block_info() {
   $menus = menu_get_menus(TRUE);
   $blocks = array();
   foreach ($menus as $name => $title) {
-    // Prefix length is 12 chars, leaves 20 for menu name.
+    // Prefix length is 12 chars, leaves 20 for menu name according to 32 char db limit.
     $delta = 'jump_menu-m_' . substr($name, 0, 20);
     $blocks[$delta]['info'] = t('Jump Menu') . ' ' . t('menu') . ' - ' . check_plain($title);
     // Menu blocks can't be cached because each menu item can have a custom
@@ -143,6 +137,7 @@ function jump_menu_block_view($delta = '') {
  * Make use of block settings on display.
  */
 function jump_menu_block_view_alter(&$data, $block) {
+  // Only bother if the title is set.
   if ($block->module == 'jump_menu' && $block->title) {
     $options = array();
     // Pass in the block settings.
@@ -185,12 +180,18 @@ function _jump_menu_render_block($delta, $options = array()) {
   $options['hide'] = (isset($options['hide'])) ? $options['hide'] : TRUE;
 
   // If a menu block.
-  if (substr($block_name, 0, 2) == 'm_') {
-    $data['subject'] = check_plain($menus[substr($block_name, 2)]);
-
-    // Set default 'choose' text to menu name.
-    $options['choose'] = (isset($options['choose'])) ? $options['choose'] : check_plain($menus[substr($block_name, 2)]);
-    $data['content'] = jump_menu(substr($block_name, 2), 0, FALSE, 0, $options['choose']);
+  if (substr($block_name, 0, 2) == 'm_') {    
+    foreach ($menus as $k => $v) {
+      // Block delta prefix length is 12 chars, leaves 20 for menu name.
+      // Compare as much fits against the menu portion of the delta.
+      if (substr($k, 0, 20) == substr($block_name, 2)) {
+        // Set the title.
+        $data['subject'] = check_plain($menus[$k]);
+        // Set default 'choose' text to menu name.
+        $options['choose'] = (isset($options['choose'])) ? $options['choose'] : check_plain($menus[$k]);
+        $data['content'] = jump_menu($k, 0, FALSE, 0, $options['choose']);
+      }
+    }
   }
   // If a local tasks block.
   elseif (substr($block_name, 0, 11) == 'local-tasks') {
@@ -240,6 +241,10 @@ function _jump_menu_render_block($delta, $options = array()) {
 
   return $data;
 
+}
+
+function _trim_name(&$value) {
+  $value = $value+1;    
 }
 
 /**
