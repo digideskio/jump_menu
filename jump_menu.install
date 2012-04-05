@@ -9,13 +9,13 @@
  * Update jump menu block deltas to allow different types of blocks.
  */
 function jump_menu_update_7010() {
-  
+
   $message = 'Update ran to alter jump menu block deltas in order to allow
     different types of blocks. This might require you to alter CSS files if you
     have themed the blocks. You will also need to clear your cache.';
-  watchdog('jump_menu', t($message), NULL, WATCHDOG_NOTICE);
-  drupal_set_message($message, 'warning');
-  
+  watchdog('jump_menu', $message, NULL, WATCHDOG_NOTICE);
+  drupal_set_message(t($message), 'warning');
+
   // Update jump menu blocks.
   // OG  = "jump_menu_name-of-menu"
   // New = "jump_menu-m_name-of-menu" and "jump_menu-local_tasks" and beyond!
@@ -33,7 +33,7 @@ function jump_menu_update_7010() {
   $query = "UPDATE {block} set delta = REPLACE(delta, 'jump_menu_', 'jump_menu-m_')
     WHERE module = 'jump_menu' AND SUBSTR(delta, 1, 16) <> 'jump_menu_local_'";
   $result = db_query($query);
-  
+
   // Update as mentioned above.
   $query = "UPDATE {block} set delta = 'jump_menu-local_tasks'
     WHERE module = 'jump_menu' AND SUBSTR(delta, 1, 16) = 'jump-menu_local_'";

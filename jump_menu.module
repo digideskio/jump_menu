@@ -12,21 +12,22 @@ define('JUMP_MENU_DEFAULT_CHOOSE', '-- Choose --');
 /**
  * Output a core menu as a select jump menu.
  */
-function jump_menu($menu, $parent, $btn = false, $maxDepth = 0, $choose = 'Select a destination') {
-    
+function jump_menu($menu, $parent, $btn = FALSE, $max_depth = 0, $choose = 'Select a destination') {
+
   ctools_include('jump-menu');
   // Load up the menu.
   $menu = menu_tree_all_data($menu);
   // Trim to the needed portion, start at parent menuID.
-  foreach($menu as $m) {
-    if ($m['link']['mlid'] == $parent) { // mlid is i18n tranlsation friendly.
+  foreach ($menu as $m) {
+    // The mlid is i18n tranlsation friendly.
+    if ($m['link']['mlid'] == $parent) {
       $menu = $m['below'];
       break;
     }
   }
-  
+
   // Initialize for building.
-  $depths = array('current' => 1, 'max' => $maxDepth);
+  $depths = array('current' => 1, 'max' => $max_depth);
   $targets = array();
   // Build the jump options from the menu.
   _jump_menu_create_options($targets, $menu, $depths);
@@ -34,26 +35,27 @@ function jump_menu($menu, $parent, $btn = false, $maxDepth = 0, $choose = 'Selec
   // Output...
   if (count($targets) == 0) {
     return 'Jump menu contains no items!';
-  } else {
-      
+  }
+  else {
+
     $options = array();
     // Handle button option.
-    if($btn) {
-        $options['hide'] = false;
+    if ($btn) {
+        $options['hide'] = FALSE;
         $options['button'] = $btn;
-    } else {
-        $options['hide'] = true;
+    }
+    else {
+        $options['hide'] = TRUE;
     }
     // Place initial select option value.
     $options['choose'] = t($choose);
-    
-    // Other available options...
-    //'title' => The text to display for the #title attribute.
-    //'description': The text to display for the #description attribute.
-    //'default_value': The text to display for the #default_value attribute.
-    //'image': If set, an image button will be used instead, and the image set to this.
-    //'inline': If set to TRUE (default) the display will be forced inline.
 
+    // Other available options...
+    // 'title' => The text to display for the #title attribute.
+    // 'description': The text to display for the #description attribute.
+    // 'default_value': The text to display for the #default_value attribute.
+    // 'image': If set, an image button will be used instead, and the image set to this.
+    // 'inline': If set to TRUE (default) the display will be forced inline.
     return drupal_render( drupal_get_form('ctools_jump_menu', $targets, $options) );
   }
 
@@ -63,14 +65,16 @@ function jump_menu($menu, $parent, $btn = false, $maxDepth = 0, $choose = 'Selec
  * Recursive menu to select option building.
  */
 function _jump_menu_create_options(&$t, &$m, &$d) {
-  foreach ($m as $item) { // Set the option.
-    
-    if($item['link']['hidden'] == 0) { // Kill non-viewable menu items.
-      
+  // Set the option.
+  foreach ($m as $item) {
+    // Kill non-viewable menu items.
+    if ($item['link']['hidden'] == 0) {
+
       // Add depth indicators to titles.
-      if($d['current'] > 1) {
-        $title = ' '. str_repeat('-', $d['current']-1) .' '. $item['link']['title'];
-      } else {
+      if ($d['current'] > 1) {
+        $title = ' '. str_repeat('-', $d['current']-1) . ' ' . $item['link']['title'];
+      }
+      else {
         $title = $item['link']['title'];
       }
       // Add targets.
@@ -82,8 +86,8 @@ function _jump_menu_create_options(&$t, &$m, &$d) {
           'title' => t($title),
           '#attributes' => array('class' => 'd-' . $d['current']),
         );
-
-      } else {
+      }
+      else {
         // Create a normal option.
         // $t[ url($item['link']['href']) ] = t($title); // Prior to special render path.
         $t[] = array(
@@ -92,37 +96,37 @@ function _jump_menu_create_options(&$t, &$m, &$d) {
           '#attributes' => array('class' => 'd-' . $d['current']),
         );
       }
+
     }
-    
-     // Loop deeper if there is no max or we haven't reached it.
+    // Loop deeper if there is no max or we haven't reached it.
     if ($item['below'] && ($d['max'] == 0 || $d['current'] < $d['max'])) {
       $d['current']++; // Drop current depth.
       _jump_menu_create_options($t, $item['below'], $d);
     }
   }
-  $d['current']--; // Raise current depth back up.
+  // Raise current depth back up.
+  $d['current']--;
 }
 
 /**
  * Register jump blocks for all menus.
  */
 function jump_menu_block_info() {
-  
   // Add all menus as blocks.
   $menus = menu_get_menus(TRUE);
   $blocks = array();
   foreach ($menus as $name => $title) {
-    $blocks['jump_menu-m_' . $name]['info'] = t('Jump Menu') . ' ' . t('menu') . ' - ' . check_plain($title);
-    // Menu blocks can't be cached because each menu item can have
-    // a custom access callback. menu.inc manages its own caching.
-    $blocks['jump_menu-m_' . $name]['cache'] = DRUPAL_CACHE_PER_ROLE;
+    // Prefix length is 12 chars, leaves 20 for menu name.
+    $delta = 'jump_menu-m_' . substr($name, 0, 20);
+    $blocks[$delta]['info'] = t('Jump Menu') . ' ' . t('menu') . ' - ' . check_plain($title);
+    // Menu blocks can't be cached because each menu item can have a custom
+    // access callback. menu.inc manages its own caching.
+    $blocks[$delta]['cache'] = DRUPAL_NO_CACHE;
   }
-  
   // Add local menu tasks block.
   $blocks['jump_menu-local-tasks']['info'] = t('Jump Menu') . ': ' . t('Local tasks');
-  // Would need to be PER ROLE and PER PAGE.
+  // Caching would need to be PER ROLE and PER PAGE.
   $blocks['jump_menu-local-tasks']['cache'] = DRUPAL_NO_CACHE;
-
   return $blocks;
 }
 
@@ -147,11 +151,16 @@ function jump_menu_block_view_alter(&$data, $block) {
     }
     // Replace content with user set title as choice text.
     // Would be nice to avoid rendering the menu twice in the stack.
-    $dataBuilt = _jump_menu_render_block($block->delta, $options);
-    if (isset($data) && ($dataBuilt) ) $data['content'] = $dataBuilt['content'];
+    $data_built = _jump_menu_render_block($block->delta, $options);
+    if (isset($data) && ($data_built)) {
+      $data['content'] = $data_built['content'];
+    }
   }
 }
 
+/**
+ * For killing off the title
+ */
 function jump_menu_preprocess_block(&$vars, $hook) {
   // Kill off the title if set. It's being used as the choose value.
   if ($vars['block']->module == 'jump_menu' && $vars['block']->title) {
@@ -163,35 +172,35 @@ function jump_menu_preprocess_block(&$vars, $hook) {
  * Abstract block rendering to be more flexible about when/how this happens.
  */
 function _jump_menu_render_block($delta, $options = array()) {
-  
+
   // Strip off jump_menu. 
-  $blockName = str_replace('jump_menu-', '', $delta);
+  $block_name = str_replace('jump_menu-', '', $delta);
   // Cache menu list.
   static $menus;
   if (!isset($menus)) {
     $menus = menu_get_menus(TRUE);
   }
-  
+
   // Options are always available.
   $options['hide'] = (isset($options['hide'])) ? $options['hide'] : TRUE;
-  
+
   // If a menu block.
-  if (substr($blockName, 0, 2) == 'm_') {
-    $data['subject'] = check_plain($menus[substr($blockName, 2)]);
+  if (substr($block_name, 0, 2) == 'm_') {
+    $data['subject'] = check_plain($menus[substr($block_name, 2)]);
     
     // Set default 'choose' text to menu name.
-    $options['choose'] = (isset($options['choose'])) ? $options['choose'] : check_plain($menus[substr($blockName, 2)]);
-    $data['content'] = jump_menu(substr($blockName, 2), 0, FALSE, 0, $options['choose']);
+    $options['choose'] = (isset($options['choose'])) ? $options['choose'] : check_plain($menus[substr($block_name, 2)]);
+    $data['content'] = jump_menu(substr($block_name, 2), 0, FALSE, 0, $options['choose']);
   }
   // If a local tasks block.
-  elseif (substr($blockName, 0, 11) == 'local-tasks') {
+  elseif (substr($block_name, 0, 11) == 'local-tasks') {
 
     // Collect the local tasks.
     $links = menu_local_tasks(0);
-    $linksSecondary = menu_local_tasks(1);
+    $links_secondary = menu_local_tasks(1);
     // Are there any real secondary tasks?
-    $secondary = (count($linksSecondary['tabs']['output']) != 0) ? TRUE : FALSE;
-    
+    $secondary = (count($links_secondary['tabs']['output']) != 0) ? TRUE : FALSE;
+
     if ($links['tabs']['count'] > 0) {
       $targets = array();
       // Create select list targets
@@ -202,8 +211,8 @@ function _jump_menu_render_block($delta, $options = array()) {
             'title' => t($l['#link']['title']),
           );
           // Do secondary tabs fit with this item?
-          if ($secondary && $linksSecondary['tabs']['output'][0]['#link']['tab_parent_href'] == $l['#link']['href']) {
-            foreach ($linksSecondary['tabs']['output'] as $sl) {
+          if ($secondary && $links_secondary['tabs']['output'][0]['#link']['tab_parent_href'] == $l['#link']['href']) {
+            foreach ($links_secondary['tabs']['output'] as $sl) {
               $targets[] = array(
                 'value' => url($sl['#link']['href']),
                 'title' => '- ' . t($sl['#link']['title']),
@@ -221,16 +230,16 @@ function _jump_menu_render_block($delta, $options = array()) {
     else {
       $data = FALSE;
     }
-    
+
   }
   // Not suppose to happen.
   else {
     drupal_set_message(t('Something is wrong with the Jump Menu module, please report.'));
     $data = FALSE;
   }
-  
+
   return $data;
-  
+
 }
 
 /**
@@ -263,10 +272,10 @@ function jump_menu_select($variables) {
   }
   $output .= '</select>';
   */
-  
+
   $output = '<select' . drupal_attributes($element['#attributes']) . '>' .
     jump_menu_form_select_options($element) . '</select>';
-  
+
   return $output;
 }
 
@@ -278,20 +287,20 @@ function jump_menu_form_select_options($element, $choices = NULL) {
   if (!isset($choices)) {
     $choices = $element['#options'];
   }
-  
-  // array_key_exists() accommodates the rare event where $element['#value'] is NULL.
-  // isset() fails in this situation.
+
+  // Using array_key_exists() accommodates the rare event where $element['#value'] is NULL.
+  // Note that isset() fails in this situation.
   $value_valid = isset($element['#value']) || array_key_exists('#value', $element);
   $value_is_array = $value_valid && is_array($element['#value']);
   $options = '';
-  
+
   foreach ($choices as $key => $choice) {
-    
+
     // Allow overloading options with an array.
     if (is_array($choice)) {
       if (isset($choice['value'])) {
         // Overloaded option array.
-        $optValue = (string) $choice['value'];
+        $opt_value = (string) $choice['value'];
       }
       else {
         if (isset($choice['title'])) {
@@ -299,7 +308,7 @@ function jump_menu_form_select_options($element, $choices = NULL) {
           $options .= '<optgroup label="' . $choice['title'] . '"></optgroup>';
         }
         else {
-          // Normal optgroups
+          // Normal optgroups.
           $options .= '<optgroup label="' . $key . '">';
           $options .= form_select_options($element, $choice);
           $options .= '</optgroup>';
@@ -308,27 +317,27 @@ function jump_menu_form_select_options($element, $choices = NULL) {
     }
     else {
       // Simple options.
-      $optValue = $key;
+      $opt_value = $key;
       $choice = array(
         'title' => $choice,
       );
     }
-    
+
     // Create the HTML output.
-    if (isset($optValue)) {
+    if (isset($opt_value)) {
       if (!isset($choice['#attributes'])) {
         $choice['#attributes'] = array();
       }
       // Note this make the first item no longer selected, but that doesn't matter.
-      if ($value_valid && (!$value_is_array && (string) $element['#value'] === $optValue || ($value_is_array && in_array($optValue, $element['#value'])))) {
+      if ($value_valid && (!$value_is_array && (string) $element['#value'] === $opt_value || ($value_is_array && in_array($opt_value, $element['#value'])))) {
         $selected = ' selected="selected"';
       }
       else {
         $selected = '';
       }
-      $options .= '<option value="' . check_plain($optValue) . '"' . $selected . drupal_attributes($choice['#attributes']) . '>' . check_plain($choice['title']) . '</option>';
+      $options .= '<option value="' . check_plain($opt_value) . '"' . $selected . drupal_attributes($choice['#attributes']) . '>' . check_plain($choice['title']) . '</option>';
     }
-    unset($optValue);
+    unset($opt_value);
   }
   return $options;
 }

@@ -27,31 +27,30 @@ jump_menu($menu, $parent, $btn = false, $maxDepth = 0, $choose = 'Select Now');
 A hard coded specific menu would look something like this:
 <?php
 function MYMODULE_block($op = 'list', $delta = 0) {
-  $menuName = 'YOUR MENU MACHINE NAME HERE';
-  if(module_exists('jump_menu')) {
+  $menu_name = 'YOUR MENU MACHINE NAME HERE';
+  if (module_exists('jump_menu')) {
     switch ($op) {
       case 'list':
         $blocks = array();
-        $blocks['mymodule_' . $menuName]['info'] = t('My Jump Menu');
-        $blocks['mymodule_' . $menuName]['cache'] = BLOCK_NO_CACHE;
-      }
+        $blocks['mymodule_' . $menu_name]['info'] = t('My Jump Menu');
+        $blocks['mymodule_' . $menu_name]['cache'] = BLOCK_NO_CACHE;
       return $blocks;
       break;
     case 'view' :
       $data['subject'] = t('My Jump Menu Title');
-      $data['content'] = jump_menu($menuName, 0, FALSE, 0, '-- Select destination --');
+      $data['content'] = jump_menu($menu_name, 0, FALSE, 0, '-- Select destination --');
       return $data;
       break;
+    }
   }
 }
-?>
+
 
 Recommendations...
 Admin drop downs are pretty useful, either based on the Navigation menu or
 better yet one created specificly for your various editor roles.
 
 <?php
-if(module_exists('jump_menu')) {
+if (module_exists('jump_menu')) {
   echo jump_menu('navigation', 18, 'Go!', 0, 'Manage the Site');
 }
-?>
