@@ -7,8 +7,10 @@
  * NOTE: Menu items must be checked as "expanded" for traversing to work.
  */
 
+define('JUMP_MENU_DEFAULT_CHOOSE', '-- Choose --');
+
 /**
- * Main constructor function.
+ * Output a core menu as a select jump menu.
  */
 function jump_menu($menu, $parent, $btn = false, $maxDepth = 0, $choose = 'Select a destination') {
     
@@ -138,10 +140,11 @@ function jump_menu_block_view($delta = '') {
  */
 function jump_menu_block_view_alter(&$data, $block) {
   if ($block->module == 'jump_menu' && $block->title) {
+    $options = array();
     // Pass in the block settings.
-    $options['choose'] = $block->title;
-    
-    $data['subject'] = '';
+    if ($block->title != '<none>') {
+      $options['choose'] = ($block->title != '<none>') ? $block->title : t(JUMP_MENU_DEFAULT_CHOOSE);
+    }
     // Replace content with user set title as choice text.
     // Would be nice to avoid rendering the menu twice in the stack.
     $dataBuilt = _jump_menu_render_block($block->delta, $options);
@@ -210,7 +213,7 @@ function _jump_menu_render_block($delta, $options = array()) {
         }
       }
       // Take options and place defaults.
-      $options['choose'] = (isset($options['choose'])) ? $options['choose'] : t('-- Choose --');      
+      $options['choose'] = (isset($options['choose'])) ? $options['choose'] : t(JUMP_MENU_DEFAULT_CHOOSE);      
       // Populate block.
       $data['subject'] = t('Local Tasks');
       $data['content'] = drupal_render( drupal_get_form('ctools_jump_menu', $targets, $options) );
