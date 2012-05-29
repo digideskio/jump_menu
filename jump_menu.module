@@ -260,26 +260,22 @@ function jump_menu_theme_registry_alter(&$theme_registry) {
  * Override select theme function (points select theming to following function).
  */
 function jump_menu_select($variables) {
+  
   $element = $variables['element'];
   element_set_attributes($element, array('id', 'name', 'size'));
   _form_set_class($element, array('form-select'));
 
-  /*
-  // The careful way, only altering jump menu selects.
   // Provide alternate rendering path for jump menus.
+  // To be careful, only altering jump menu selects, http://drupal.org/node/1512550
   $output = '<select' . drupal_attributes($element['#attributes']) . '>';
-  if ($variables['element']['#attributes']['class'][0] == 'ctools-jump-menu-select') {
-    // TODO: This is a weak thing to test.
+  // @todo This is a weak thing to test.
+  if ($element['#attributes']['class'][0] == 'ctools-jump-menu-select') {
     $output .= jump_menu_form_select_options($element);
   }
   else {
     $output .= form_select_options($element);
   }
   $output .= '</select>';
-  */
-
-  $output = '<select' . drupal_attributes($element['#attributes']) . '>' .
-    jump_menu_form_select_options($element) . '</select>';
 
   return $output;
 }
