@@ -51,7 +51,8 @@ function jump_menu($menu, $parent, $btn = FALSE, $max_depth = 0, $choose = 'Sele
     // 'default_value': The text to display for the #default_value attribute.
     // 'image': If set, an image button will be used instead, and the image set to this.
     // 'inline': If set to TRUE (default) the display will be forced inline.
-    return drupal_render(drupal_get_form('ctools_jump_menu', $targets, $options));
+    $output = drupal_get_form('ctools_jump_menu', $targets, $options);
+    return drupal_render($output);
   }
 }
 
