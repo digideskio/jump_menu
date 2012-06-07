@@ -235,8 +235,16 @@ function _jump_menu_render_block($delta, $options = array()) {
 
   }
   // Not suppose to happen.
-  else {
-    drupal_set_message(t('Something is wrong with the Jump Menu module, please report.'));
+  else {    
+    $notice = t('Something is wrong with the Jump Menu module, please report.');
+    if (variable_get('error_level') > 0) {
+      drupal_set_message($notice);
+    }
+    else {
+      $message = 'Unable to render Jump Menu block. Likely due to a bad menu delta in the database.';
+      watchdog('jump_menu', $message, array(), WATCHDOG_ERROR);
+      drupal_set_message($notice);
+    }
     $data = FALSE;
   }
 
