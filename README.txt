@@ -25,6 +25,30 @@ Code...
 jump_menu($menu, $parent, $btn = false, $maxDepth = 0, $choose = 'Select Now');
 
 A hard coded specific menu would look something like this:
+
+Drupal 7:
+<?php
+function MYMODULE_block_info() {
+  $menu_name = 'YOUR-MENU-MACHINE-NAME-HERE';
+  $blocks = array(
+    'MYMODULE' => array(
+      'info' => t('My Jump Menu'),
+      'cache' = DRUPAL_NO_CACHE,
+    ),
+  );
+  return $blocks;
+}
+
+function MYMODULE_block_view($delta = '') {
+  $data = array(
+    'subject' => t('My Jump Menu Title'),
+    'content' => jump_menu($menu_name, 0, FALSE, 0, '-- Select destination --');
+  );
+  return $data;
+}
+?>
+
+Drupal 6:
 <?php
 function MYMODULE_block($op = 'list', $delta = 0) {
   $menu_name = 'YOUR MENU MACHINE NAME HERE';
