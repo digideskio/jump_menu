@@ -3,13 +3,11 @@ Normal procedure:
 1) Place in modules/contrib/jump_menu
 2) Enable at admin/build/modules or via drush.
 
-
 Menus...
 This modules runs from: any exsisting menu, from any parent item, to any depth.
 Create the menu you want manually, via nodes, Taxonomy Menu, Auto Menu, etc.
 A great place to easily find the menu ID number is the edit link within the
 admin/build/menu area.
-
 
 Placing...
 This module will create a jump down block for each menu on your site.
@@ -19,6 +17,9 @@ Additionally this module can be used by developers to place drop-down menus via
 the nice clean output function. Though it's sacrilege, you can just place this
 code in a block with PHP Input Format. However what you should do is create a
 small module to provide the blocks you need.
+
+Configuration...
+Change the title (first item in the menu) by setting a custom block title.
 
 
 Code...
@@ -71,6 +72,7 @@ function MYMODULE_block($op = 'list', $delta = 0) {
   }
 }
 ?>
+
 
 Recommendations...
 Admin drop downs are pretty useful, either based on the Navigation menu or
