@@ -46,3 +46,14 @@ function jump_menu_update_7010() {
     ->execute();
   */
 }
+
+/**
+ * Implements hook_uninstall().
+ */
+function jump_menu_uninstall() {
+  db_delete('variable')
+    ->condition('name', 'jump_menu_%', 'LIKE')
+    ->execute();
+
+  cache_clear_all('variables', 'cache_bootstrap');
+}

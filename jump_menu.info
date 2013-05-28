@@ -1,5 +1,5 @@
 name = Better Jump Menus
-description = Enables creating custom jump menus programmatically via the CTools API.
+description = Enables creating custom jump menus as menu blocks, local tasks block, or programmatically all via the CTools API.
 dependencies[] = ctools
 dependencies[] = block
 dependencies[] = menu

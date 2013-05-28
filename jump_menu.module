@@ -8,11 +8,13 @@
  */
 
 define('JUMP_MENU_DEFAULT_CHOOSE', '-- Choose --');
+define('JUMP_MENU_DEFAULT_BLOCK_SETTINGS_SHOW_CURRENT', 0);
+
 
 /**
  * Output a core menu as a select jump menu.
  */
-function jump_menu($menu, $parent, $btn = FALSE, $max_depth = 0, $choose = 'Select a destination') {
+function jump_menu($menu, $parent, $btn = FALSE, $max_depth = 0, $choose = 'Select a destination', $current = FALSE) {
   ctools_include('jump-menu');
   // Load up the menu.
   $menu = menu_tree_all_data($menu);
@@ -45,16 +47,22 @@ function jump_menu($menu, $parent, $btn = FALSE, $max_depth = 0, $choose = 'Sele
     }
     // Place initial select option value.
     $options['choose'] = t($choose);
+    // Set current location if desired.
+    if ($current) {
+      $current_path = base_path() . request_path();
+      if (!empty($current_path)) {
+        $options['default_value'] = $current_path;
+      }
+    }
     // Other available options...
     // 'title' => The text to display for the #title attribute.
     // 'description': The text to display for the #description attribute.
-    // 'default_value': The text to display for the #default_value attribute.
     // 'image': If set, an image button will be used instead, and the image set to this.
     // 'inline': If set to TRUE (default) the display will be forced inline.
-    $output = drupal_get_form('ctools_jump_menu', $targets, $options);
-    return drupal_render($output);
+    return drupal_render(drupal_get_form('ctools_jump_menu', $targets, $options));
   }
 }
+
 
 /**
  * Recursive menu to select option building.
@@ -67,7 +75,7 @@ function _jump_menu_create_options(&$t, &$m, &$d) {
 
       // Add depth indicators to titles.
       if ($d['current'] > 1) {
-        $title = ' ' . str_repeat('-', $d['current']-1) . ' ' . $item['link']['title'];
+        $title = ' ' . str_repeat('-', $d['current'] - 1) . ' ' . $item['link']['title'];
       }
       else {
         $title = $item['link']['title'];
@@ -103,6 +111,7 @@ function _jump_menu_create_options(&$t, &$m, &$d) {
   $d['current']--;
 }
 
+
 /**
  * Register jump blocks for all menus.
  */
@@ -124,6 +133,7 @@ function jump_menu_block_info() {
   $blocks['jump_menu-local-tasks']['cache'] = DRUPAL_NO_CACHE;
   return $blocks;
 }
+
 
 /**
  * Display jump menu block.
@@ -154,8 +164,9 @@ function jump_menu_block_view_alter(&$data, $block) {
   }
 }
 
+
 /**
- * For killing off the title
+ * For killing off the title.
  */
 function jump_menu_preprocess_block(&$vars, $hook) {
   // Kill off the title if set. It's being used as the choose value.
@@ -163,6 +174,7 @@ function jump_menu_preprocess_block(&$vars, $hook) {
     $vars['block']->subject = '';
   }
 }
+
 
 /**
  * Abstract block rendering to be more flexible about when/how this happens.
@@ -179,9 +191,12 @@ function _jump_menu_render_block($delta, $options = array()) {
 
   // Options are always available.
   $options['hide'] = (isset($options['hide'])) ? $options['hide'] : TRUE;
+  // Allow setting active item.
+  $settings = variable_get('jump_menu_block_settings_show_current', array());
+  $current = (isset($settings[$delta])) ? $settings[$delta] : JUMP_MENU_DEFAULT_BLOCK_SETTINGS_SHOW_CURRENT;
 
   // If a menu block.
-  if (substr($block_name, 0, 2) == 'm_') {    
+  if (substr($block_name, 0, 2) == 'm_') {
     foreach ($menus as $k => $v) {
       // Block delta prefix length is 12 chars, leaves 20 for menu name.
       // Compare as much fits against the menu portion of the delta.
@@ -190,7 +205,7 @@ function _jump_menu_render_block($delta, $options = array()) {
         $data['subject'] = check_plain($menus[$k]);
         // Set default 'choose' text to menu name.
         $options['choose'] = (isset($options['choose'])) ? $options['choose'] : check_plain($menus[$k]);
-        $data['content'] = jump_menu($k, 0, FALSE, 0, $options['choose']);
+        $data['content'] = jump_menu($k, 0, FALSE, 0, $options['choose'], $current);
       }
     }
   }
@@ -224,7 +239,14 @@ function _jump_menu_render_block($delta, $options = array()) {
         }
       }
       // Take options and place defaults.
-      $options['choose'] = (isset($options['choose'])) ? $options['choose'] : t(JUMP_MENU_DEFAULT_CHOOSE);      
+      $options['choose'] = (isset($options['choose'])) ? $options['choose'] : t(JUMP_MENU_DEFAULT_CHOOSE);
+      // Process setting active item.
+      if ($current) {
+        $current_path = base_path() . request_path();
+        if (!empty($current_path)) {
+          $options['default_value'] = $current_path;
+        }
+      }
       // Populate block.
       $data['subject'] = t('Local Tasks');
       $data['content'] = drupal_render(drupal_get_form('ctools_jump_menu', $targets, $options));
@@ -235,7 +257,7 @@ function _jump_menu_render_block($delta, $options = array()) {
 
   }
   // Not suppose to happen.
-  else {    
+  else {
     $notice = t('Something is wrong with the Jump Menu module, please report.');
     if (variable_get('error_level') > 0) {
       drupal_set_message($notice);
@@ -252,12 +274,17 @@ function _jump_menu_render_block($delta, $options = array()) {
 
 }
 
-function _trim_name(&$value) {
-  $value = $value+1;    
-}
 
 /**
- * Alter theme registrat to allow overriding select theme function,
+ * Utility.
+ */
+function _trim_name(&$value) {
+  $value = $value + 1;
+}
+
+
+/**
+ * Alter theme registration to allow overriding select theme function,
  * to allow for extra attributes within options through form API.
  * This is to add depth classes.
  */
@@ -265,11 +292,11 @@ function jump_menu_theme_registry_alter(&$theme_registry) {
   $theme_registry['select']['function'] = 'jump_menu_select';
 }
 
+
 /**
  * Override select theme function (points select theming to following function).
  */
 function jump_menu_select($variables) {
-  
   $element = $variables['element'];
   element_set_attributes($element, array('id', 'name', 'size'));
   _form_set_class($element, array('form-select'));
@@ -288,6 +315,7 @@ function jump_menu_select($variables) {
 
   return $output;
 }
+
 
 /**
  * Provide alternate select options builder.
@@ -350,4 +378,54 @@ function jump_menu_form_select_options($element, $choices = NULL) {
     unset($opt_value);
   }
   return $options;
+}
+
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ * Add custom options to block editing forms.
+ */
+function jump_menu_form_block_admin_configure_alter(&$form, &$form_state, $form_id) {
+  if ($form['module']['#value'] == 'jump_menu') {
+    $delta = $form['delta']['#value'];
+    // Determine the default value for this block.
+    $settings = variable_get('jump_menu_block_settings_show_current', array());
+    $default = (isset($settings[$delta])) ? $settings[$delta] : JUMP_MENU_DEFAULT_BLOCK_SETTINGS_SHOW_CURRENT;
+    // Add jump menu fieldset with options.
+    $form['jump_menu_options'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Jump Menu'),
+      '#weight' => 1,
+      'jump_menu_show_current' => array(
+        '#type' => 'checkbox',
+        '#title' => t('Display Curent Location'),
+        '#description' => t('Set the jump menu to the currently active page location.'),
+        '#default_value' => $default,
+      ),
+    );
+    // Attach a submit handler to save our preferences.
+    $form['#submit'][] = 'jump_menu_block_settings_submit';
+  }
+}
+
+
+/**
+ * Submit handler to save block-specific jump menu settings.
+ */
+function jump_menu_block_settings_submit($form, &$form_state) {
+  $settings = variable_get('jump_menu_block_settings_show_current', array());
+  $delta = $form_state['values']['delta'];
+  // Clear out our block settings array if no restrictions are applied.
+  if ($form_state['values']['jump_menu_show_current'] == JUMP_MENU_DEFAULT_BLOCK_SETTINGS_SHOW_CURRENT) {
+    // $setting = variable_get('jump_menu_block_settings_show_current');
+    if (isset($settings[$delta])) {
+      unset($settings[$delta]);
+    }
+  }
+  // Otherwise, add the setting to our block settings array.
+  else {
+    $settings[$delta] = $form_state['values']['jump_menu_show_current'];
+  }
+  // Save the settings.
+  variable_set('jump_menu_block_settings_show_current', $settings);
 }
