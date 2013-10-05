@@ -80,7 +80,8 @@ function _jump_menu_create_options(&$t, &$m, &$d) {
       else {
         $title = $item['link']['title'];
       }
-      // Add targets...
+
+      // Add option targets...
       // Active and depth classes (for aggressive theming).
       $classes = 'd-' . $d['current'];
       // @todo Break this off once dealing with language, since it's duplicated in local tasks.
@@ -89,12 +90,19 @@ function _jump_menu_create_options(&$t, &$m, &$d) {
       if ($item['link']['href'] == $current_path) {
         $classes .= ' active';
       }
-      // Allow for special menu item dummy items for grouping.
+      $attributes = array('class' => $classes);
+
+      // Add attribute for opening mode.
+      if (isset($item['link']['options']['attributes']['target'])) {
+        $attributes['target'] = $item['link']['options']['attributes']['target'];
+      }
+
+      // Allow for special menu item dummy items for grouping.    
       if (module_exists('special_menu_items') && $item['link']['page_callback'] == 'drupal_not_found') {
         // Create a dummy option using optgroups.
         $t[] = array(
           'title' => t($title),
-          '#attributes' => array('class' => $classes),
+          '#attributes' => $attributes,
         );
       }
       else {
@@ -109,7 +117,7 @@ function _jump_menu_create_options(&$t, &$m, &$d) {
         $t[] = array(
           'value' => url($item['link']['href'], $url_options),
           'title' => t($title),
-          '#attributes' => array('class' => $classes),
+          '#attributes' => $attributes,
         );
       }
 
