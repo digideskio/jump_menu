@@ -238,7 +238,7 @@ function _jump_menu_render_block($delta, $options = array()) {
       foreach ($links['tabs']['output'] as $l) {
         if ($l['#link']['access'] == TRUE) {
           // Set active.
-          $classes = ($l['#active']) ? 'active' : '';
+          $classes = (isset($l['#active'])) ? 'active' : '';
           $targets[] = array(
             'value' => url($l['#link']['href']),
             'title' => t($l['#link']['title']),
@@ -269,7 +269,7 @@ function _jump_menu_render_block($delta, $options = array()) {
       }
       // Populate block.
       $data['subject'] = t('Local Tasks');
-      $data['content'] = drupal_render(drupal_get_form('ctools_jump_menu', $targets, $options));
+      $data['content'] = drupal_get_form('ctools_jump_menu', $targets, $options);
     }
     else {
       $data = FALSE;
