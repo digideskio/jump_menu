@@ -18,6 +18,10 @@ function jump_menu($menu, $parent, $btn = FALSE, $max_depth = 0, $choose = 'Sele
   ctools_include('jump-menu');
   // Load up the menu.
   $menu = menu_tree_all_data($menu);
+  // Localize the tree.
+  if (module_exists('i18n_menu')) {
+    $menu = i18n_menu_localize_tree($menu);
+  }
   // Trim to the needed portion, start at parent menuID.
   foreach ($menu as $m) {
     // The mlid is i18n tranlsation friendly.
