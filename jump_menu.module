@@ -245,6 +245,9 @@ function _jump_menu_render_block($delta, $options = array()) {
     $secondary = (count($links_secondary['tabs']['output']) != 0) ? TRUE : FALSE;
 
     if ($links['tabs']['count'] > 0) {
+      // Add plugin.
+      ctools_include('jump-menu');
+
       $targets = array();
       // Create select list targets.
       foreach ($links['tabs']['output'] as $l) {
