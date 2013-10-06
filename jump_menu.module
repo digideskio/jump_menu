@@ -116,7 +116,7 @@ function _jump_menu_create_options(&$t, &$m, &$d) {
           $url_options['query'] = $item['link']['localized_options']['query'];
         }
         if (!empty($item['link']['localized_options']['fragment'])) {
-          $url_options['query'] = $item['link']['localized_options']['fragment'];
+          $url_options['fragment'] = $item['link']['localized_options']['fragment'];
         }
         $t[] = array(
           'value' => url($item['link']['href'], $url_options),
