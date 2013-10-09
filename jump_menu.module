@@ -7,8 +7,10 @@
  * NOTE: Menu items must be checked as "expanded" for traversing to work.
  */
 
+// Constants.
 define('JUMP_MENU_DEFAULT_CHOOSE', '-- Choose --');
-define('JUMP_MENU_DEFAULT_BLOCK_SETTINGS_SHOW_CURRENT', 0);
+define('JUMP_MENU_BLOCK_DEFAULTS_SHOW_CURRENT', 0);
+define('JUMP_MENU_BLOCK_DEFAULTS_SHOW_BUTTON', 0);
 
 
 /**
@@ -217,9 +219,19 @@ function _jump_menu_render_block($delta, $options = array()) {
 
   // Options are always available.
   $options['hide'] = (isset($options['hide'])) ? $options['hide'] : TRUE;
+  
   // Allow setting active item.
-  $settings = variable_get('jump_menu_block_settings_show_current', array());
-  $current = (isset($settings[$delta])) ? $settings[$delta] : JUMP_MENU_DEFAULT_BLOCK_SETTINGS_SHOW_CURRENT;
+  $settings = _jump_menu_get_settings($delta);
+
+  // Allow showing a button via block UI.
+  if ($settings['show_button']) {
+    $options['hide'] = FALSE;
+    $options['button'] = 'Go';
+  }
+  else {
+    $options['hide'] = (isset($options['hide'])) ? $options['hide'] : TRUE;
+    $options['button'] = FALSE;
+  }
 
   // If a menu block.
   if (substr($block_name, 0, 2) == 'm_') {
@@ -231,7 +243,7 @@ function _jump_menu_render_block($delta, $options = array()) {
         $data['subject'] = check_plain($menus[$k]);
         // Set default 'choose' text to menu name.
         $options['choose'] = (isset($options['choose'])) ? $options['choose'] : check_plain($menus[$k]);
-        $data['content'] = jump_menu($k, 0, FALSE, 0, $options['choose'], $current);
+        $data['content'] = jump_menu($k, 0, $options['button'], 0, $options['choose'], $settings['show_current']);
       }
     }
   }
@@ -276,7 +288,7 @@ function _jump_menu_render_block($delta, $options = array()) {
       // Take options and place defaults.
       $options['choose'] = (isset($options['choose'])) ? $options['choose'] : t(JUMP_MENU_DEFAULT_CHOOSE);
       // Process setting active item.
-      if ($current) {
+      if ($settings['show_current']) {
         $current_path = base_path() . request_path();
         if (!empty($current_path)) {
           $options['default_value'] = $current_path;
@@ -422,20 +434,30 @@ function jump_menu_form_select_options($element, $choices = NULL) {
 function jump_menu_form_block_admin_configure_alter(&$form, &$form_state, $form_id) {
   if ($form['module']['#value'] == 'jump_menu') {
     $delta = $form['delta']['#value'];
-    // Determine the default value for this block.
-    $settings = variable_get('jump_menu_block_settings_show_current', array());
-    $default = (isset($settings[$delta])) ? $settings[$delta] : JUMP_MENU_DEFAULT_BLOCK_SETTINGS_SHOW_CURRENT;
+    $settings = variable_get('jump_menu_block_settings', array());
+
     // Add jump menu fieldset with options.
     $form['jump_menu_options'] = array(
       '#type' => 'fieldset',
       '#title' => t('Jump Menu'),
       '#weight' => 1,
+
+      // Show current page selected.
       'jump_menu_show_current' => array(
         '#type' => 'checkbox',
         '#title' => t('Display Curent Location'),
-        '#description' => t('Set the jump menu to the currently active page location.'),
-        '#default_value' => $default,
+        '#description' => t('Set the menu item to the currently active page location.'),
+        '#default_value' => (isset($settings[$delta]['show_current'])) ? $settings[$delta]['show_current'] : JUMP_MENU_BLOCK_DEFAULTS_SHOW_CURRENT,
       ),
+
+      // Show Go button.
+      'jump_menu_show_button' => array(
+        '#type' => 'checkbox',
+        '#title' => t('Display Go Button'),
+        '#description' => t('Show button on jump menu.'),
+        '#default_value' => (isset($settings[$delta]['show_button'])) ? $settings[$delta]['show_button'] : JUMP_MENU_BLOCK_DEFAULTS_SHOW_CURRENT,
+      ),
+
     );
     // Attach a submit handler to save our preferences.
     $form['#submit'][] = 'jump_menu_block_settings_submit';
@@ -445,21 +467,72 @@ function jump_menu_form_block_admin_configure_alter(&$form, &$form_state, $form_
 
 /**
  * Submit handler to save block-specific jump menu settings.
+ * Keeps the variable clean and tidy!
  */
 function jump_menu_block_settings_submit($form, &$form_state) {
-  $settings = variable_get('jump_menu_block_settings_show_current', array());
   $delta = $form_state['values']['delta'];
-  // Clear out our block settings array if no restrictions are applied.
-  if ($form_state['values']['jump_menu_show_current'] == JUMP_MENU_DEFAULT_BLOCK_SETTINGS_SHOW_CURRENT) {
-    // $setting = variable_get('jump_menu_block_settings_show_current');
-    if (isset($settings[$delta])) {
-      unset($settings[$delta]);
+  $settings = variable_get('jump_menu_block_settings', array());
+  $update_needed = FALSE;
+
+  $system_defaults = array(
+    'show_current' => JUMP_MENU_BLOCK_DEFAULTS_SHOW_CURRENT,
+    'show_button' => JUMP_MENU_BLOCK_DEFAULTS_SHOW_BUTTON,
+  );
+
+  // Check all settings to clear out array if just default.
+  foreach ($system_defaults as $config => $val) {
+    // NOTE: Separated routes due to PHP notices with empty comparisons.
+    // Also, every save shouldn't trigger a variable_set().
+
+    // Config IS empty (new save).
+    if (!isset($settings[$delta][$config])) {
+      // Submission IS NOT default.
+      if($form_state['values']['jump_menu_' . $config] != $val) {
+        $settings[$delta][$config] = $form_state['values']['jump_menu_' . $config];
+        $update_needed = TRUE;
+      }
+      else {
+        // Submission IS default, do nothing.
+      }
     }
+    else {
+      // Submission DOES NOT match what was set previously.
+      if ($form_state['values']['jump_menu_' . $config] != $settings[$delta][$config]) {
+        $update_needed = TRUE;
+
+        // Submission matches system default (set back to default).
+        if ($form_state['values']['jump_menu_' . $config] == $val) {
+          // Delete it to remove setting.
+          unset($settings[$delta][$config]);
+        }
+        else {
+          // Collect the new configuration.
+          $settings[$delta][$config] = $form_state['values']['jump_menu_' . $config];
+        }
+      }
+    }
+
+    // No there is meaningful data for this block, but it's stored.
+    if (isset($settings[$delta]) && count($settings[$delta]) == 0) {
+      unset($settings[$delta]);
+      $update_needed = TRUE;
+    }
+
   }
-  // Otherwise, add the setting to our block settings array.
-  else {
-    $settings[$delta] = $form_state['values']['jump_menu_show_current'];
+
+  // Update the block settings variable if necessary.
+  if ($update_needed) {
+    variable_set('jump_menu_block_settings', $settings);
   }
-  // Save the settings.
-  variable_set('jump_menu_block_settings_show_current', $settings);
+}
+
+/**
+ * Utility: Grab settings or defaults, for display or settings form.
+ */
+function _jump_menu_get_settings($delta) {
+  $settings = variable_get('jump_menu_block_settings', array());
+  return array(
+    'show_current' => (isset($settings[$delta]['show_current'])) ? $settings[$delta]['show_current'] : JUMP_MENU_BLOCK_DEFAULTS_SHOW_CURRENT,
+    'show_button' => (isset($settings[$delta]['show_button'])) ? $settings[$delta]['show_button'] : JUMP_MENU_BLOCK_DEFAULTS_SHOW_BUTTON,
+  );
 }
