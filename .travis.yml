@@ -1,0 +1,37 @@
+nguage: php
+
+php:
+  - 5.3
+
+mysql:
+  database: drupal_test
+  username: root
+  encoding: utf8
+
+before_script:
+  # navigate out of module directory to prevent blown stack by recursive module lookup
+  - cd ../..
+
+  # install drush
+  - pear channel-discover pear.drush.org
+  - pear install drush/drush-5.8.0
+  - phpenv rehash
+
+  # create new site, stubbing sendmail path with true to prevent delivery errors and manually resolving drush path
+  - mysql -e 'create database drupal_test'
+  - php -d test_site_path=`which true` `pear config-get php_dir`/drush/drush.php --yes core-quick-drupal --profile=testing --no-server --db-url=mysql://root:@127.0.0.1/drupal_test --enable=jump_menu
+
+  # reference and enable modules in the build site
+  - ln -s $(readlink -e $(cd -)) test_site/drupal/sites/all/modules/jump_menu
+  - cd test_site/drupal
+  - drush --yes pm-enable jump_menu
+  - drush cc all
+
+  # start a web server on port 8080, download requirements
+  - sudo apt-get update > /dev/null
+  - sudo apt-get install -y --force-yes php5-cgi php5-mysql
+  - drush runserver 127.0.0.1:8080 &
+  - sleep 4
+  - drush vset --yes simpletest_verbose FALSE 
+
+script: drush test-run 'Jump Menu Works' --uri=http://127.0.0.1:8080
